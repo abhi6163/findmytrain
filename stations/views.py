@@ -6,21 +6,21 @@ from stations.models import RouteInfo1
 from stations.models import TrainFullInfo, StationsNew,TrainInfo,TrainRoute
 from rest_framework.response import Response
 from rest_framework import status,generics
+import MyCrypto
 import json
 import ast
-import MyCrypto
 import os
 from findmytrain.settings import BASE_DIR
 from django.core import serializers
 from django.forms.models import model_to_dict
-from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
+from django_filters import FilterSet
 from rest_framework.exceptions import APIException
 from stations.filters import CustomSearchFilter,FooFilter
 from datetime import datetime
 import math
 
-
+    
 class StationsNewView(generics.ListAPIView):
     '''About Stations'''
     queryset = StationsNew.objects.all()
@@ -211,7 +211,8 @@ class TrainRouteInfo(generics.ListAPIView):
     queryset = TrainRoute.objects.all()
     serializer_class = TrainRouteSerializer
     filter_backends = [filters.SearchFilter]
-    
+    #filter_backends = (DjangoFilterBackend,)
+    #filterset_fields= ['trainCode','trainName']
     ordering_fields = ['trainCode']
     search_fields = ['^trainCode', '^trainName']
     def filter_queryset(self, queryset):
@@ -230,28 +231,77 @@ class TrainRouteInfo(generics.ListAPIView):
         """Getting Stations Info"""
         
         queryset = self.filter_queryset(self.get_queryset())
+        #queryset = self.filter_backends
         serializer = TrainRouteSerializer(queryset,many=True)
         return Response(serializer.data[:20],status=status.HTTP_200_OK)
+
 class TrainsBwStations(APIView):
     def get(self, request):
         """Getting Stations Info"""
         
         frm=request.GET.get('from')
+        if frm is None:
+            return Response({'Error':'Please provide ?from= parameter'},status=status.HTTP_400_BAD_REQUEST)
         to=request.GET.get('to')
-        frrm=self.kwargs['frm']
-        too=self.kwargs['to']
-        jsonData=MyCrypto.trainsBwStations(frrm,too,'XXX')
+        if to is None:
+            return Response({'Error':'Please provide ?to= parameter'},status=status.HTTP_400_BAD_REQUEST)
+        jsonData=MyCrypto.trainsBwStations(frm,to,'XXX')
         dictData=json.loads(jsonData)
-        # data={'from':model_to_dict(Sta)
-
-        # }
-        #for train in data:
-
         
-        #queryset = self.filter_queryset(self.get_queryset())
-        #serializer = TrainRouteSerializer(queryset,many=True)
         return Response(dictData,status=status.HTTP_200_OK)
-
+class LiveStationStatus(APIView):
+    def get(self, request):
+        """Getting Stations Info"""
+        
+        stn=request.GET.get('station')
+        if stn is None:
+            return Response({'Error':'Please provide ?station= parameter'},status=status.HTTP_400_BAD_REQUEST)
+        to=request.GET.get('to')
+        if to is None:
+            to=''
+        withinhrs=request.GET.get('withinhrs')
+        print(withinhrs)
+        type(withinhrs)
+        if withinhrs is None:
+            withinhrs='2'
+        jsonData=MyCrypto.liveStation(stn,str(withinhrs),to)
+        dictData=json.loads(jsonData)
+        return Response(dictData,status=status.HTTP_200_OK)
+class TrainLiveLocation(APIView):
+    def get(self, request):
+        """Getting Stations Info"""
+        
+        trn=request.GET.get('trainNo')
+        if trn is None:
+            return Response({'Error':'Please provide ?trainNo= parameter'},status=status.HTTP_400_BAD_REQUEST)
+        
+        jsonData=MyCrypto.getTrainLiveLocation(trn)
+        dictData=json.loads(jsonData)
+        return Response(dictData,status=status.HTTP_200_OK)
+class FullRunningOfTrain(APIView):
+    def get(self, request):
+        """Getting Stations Info"""
+        
+        trn=request.GET.get('trainNo')
+        date=request.GET.get('date')
+        if trn is None:
+            return Response({'Error':'Please provide ?trainNo= parameter'},status=status.HTTP_400_BAD_REQUEST)
+        if date is None:
+            date=datetime.now()
+        else:
+            date=datetime.strptime(date,"%d-%m-%Y")
+        jsonData=MyCrypto.getFullRunningOFTrain(trn,date)
+        mydata=TrainRoute.objects.get(pk=trn)
+        
+        dictData=json.loads(jsonData)
+        for station in dictData['STNS']:
+            print(station['SN'])
+        return Response(dictData,status=status.HTTP_200_OK)
+class TrainType(APIView):
+    def get(self, request):
+        jsonData=MyCrypto.trainTypes()
+        dictData=json.loads(jsonData)
+        return Response(dictData,status=status.HTTP_200_OK)
 # class TrainRoutInfo(generics.ListAPIView):
 #     """Train Rout By Train Code"""
 #     #TrainFullInfo.objects.all().delete()

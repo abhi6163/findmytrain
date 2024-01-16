@@ -29,8 +29,8 @@ def getTrainLiveLocation(trainNo):
     '''jjjj'''
     tt='service=TrainRunningMob&subService=GetTrainInstance&trainNo='+trainNo
     return MyCrypto.decrypt(MyCrypto.fromHex(my_django_view(tt)['jsonIn']))
-def getFullRunningOFTrain(trainNo):
-    time = datetime.now()
+def getFullRunningOFTrain(trainNo,time):
+    
     print(time.strftime("%d-%b-%Y"))
     tt='service=TrainRunningMob&subService=ShowFullRunJson&trainNo='+trainNo+'&jStation=&jDateType=&arrDepFlag=D&startDate='+str(time.strftime("%d-%b-%Y"))
     print(tt)

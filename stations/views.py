@@ -25,6 +25,7 @@ class StationsNewView(generics.ListAPIView):
     '''About Stations'''
     queryset = StationsNew.objects.all()
     serializer_class = StationsNewSerializer
+    filter_backends = [filters.SearchFilter]
     ordering_fields = ['StationCode']
     search_fields = ['^StationCode', '^StationName']
     def list(self, request):

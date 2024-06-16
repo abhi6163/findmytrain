@@ -4,6 +4,8 @@ import codecs
 import base64
 import hashlib
 import random
+import uuid
+import zlib
 from Cryptodome.Cipher import AES
 from Cryptodome.Util.Padding import pad, unpad
 from Cryptodome.Random import get_random_bytes
@@ -35,6 +37,7 @@ def getFullRunningOFTrain(trainNo,time):
     tt='service=TrainRunningMob&subService=ShowFullRunJson&trainNo='+trainNo+'&jStation=&jDateType=&arrDepFlag=D&startDate='+str(time.strftime("%d-%b-%Y"))
     print(tt)
     return MyCrypto.decrypt(MyCrypto.fromHex(my_django_view(tt)['jsonIn']))
+
 def my_django_view(string):
     url = "https://enquiry.indianrail.gov.in/crisns/AppServAnd"
     meta=MyCrypto.getMeta().upper()

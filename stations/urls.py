@@ -12,4 +12,6 @@ urlpatterns=[path('stations',views.StationInfoView.as_view(),name='stations'),
              path('trainlivelocation',views.TrainLiveLocation.as_view(),name='trainlivelocation'),
              path('fullrunningoftrain',views.FullRunningOfTrain.as_view(),name='trainlivelocation'),
              path('traintypes',views.TrainType.as_view(),name='trainlivelocation'),
+             path('wimtlivestation',views.WimtLiveStation.as_view(),name='wimtlivestation'),
+             path('wimttrainlivestatus',views.WimtTrainLiveStatus.as_view(),name='wimttraimlivestatus'),
              ]

@@ -10,6 +10,7 @@ import MyCrypto
 import json
 import ast
 import os
+import WIMT
 from findmytrain.settings import BASE_DIR
 from django.core import serializers
 from django.forms.models import model_to_dict
@@ -267,7 +268,19 @@ class LiveStationStatus(APIView):
             withinhrs='2'
         jsonData=MyCrypto.liveStation(stn,str(withinhrs),to)
         dictData=json.loads(jsonData)
+        
         return Response(dictData,status=status.HTTP_200_OK)
+        
+class WimtLiveStation(APIView):
+    '''Live Station data from wimt'''
+    def get(self,request):
+        stn=request.GET.get('station')
+        if stn is None:
+            return Response({'Error':'Please provide ?station= parameter'},status=status.HTTP_400_BAD_REQUEST)
+        
+        d=WIMT.getLiveStationStatus(stn)
+        return Response(d,status=status.HTTP_200_OK)
+
 class TrainLiveLocation(APIView):
     def get(self, request):
         """Getting Stations Info"""
@@ -285,19 +298,39 @@ class FullRunningOfTrain(APIView):
         
         trn=request.GET.get('trainNo')
         date=request.GET.get('date')
+        
         if trn is None:
             return Response({'Error':'Please provide ?trainNo= parameter'},status=status.HTTP_400_BAD_REQUEST)
         if date is None:
-            date=datetime.now()
+            today=datetime.now().strftime("%d-%m-%Y")
+            print('time: '+today)
+            date=datetime.strptime(today,"%d-%m-%Y")
         else:
             date=datetime.strptime(date,"%d-%m-%Y")
+        train=TrainFullInfo.objects.get(pk=trn)
         jsonData=MyCrypto.getFullRunningOFTrain(trn,date)
-        mydata=TrainRoute.objects.get(pk=trn)
-        
         dictData=json.loads(jsonData)
-        for station in dictData['STNS']:
-            print(station['SN'])
         return Response(dictData,status=status.HTTP_200_OK)
+    
+class WimtTrainLiveStatus(APIView):
+    def get(self,request):
+        trn=request.GET.get('trainNo')
+        date=request.GET.get('date')
+        
+        if trn is None:
+            return Response({'Error':'Please provide ?trainNo= parameter'},status=status.HTTP_400_BAD_REQUEST)
+        if date is None:
+            today=datetime.now().strftime("%d-%m-%Y")
+            print('time: '+today)
+            date=datetime.strptime(today,"%d-%m-%Y")
+        else:
+            date=datetime.strptime(date,"%d-%m-%Y")
+        train=TrainFullInfo.objects.get(pk=trn)
+        src=train.srcStation['StationCode']
+        dst=train.destStation['StationCode']
+        resp=MyCrypto.getWIMTTrainLiveLocation(trn,date,src,dst)
+        return Response(resp,status=status.HTTP_200_OK)
+
 class TrainType(APIView):
     def get(self, request):
         jsonData=MyCrypto.trainTypes()

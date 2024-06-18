@@ -19,9 +19,33 @@ from django_filters import FilterSet
 from rest_framework.exceptions import APIException
 from stations.filters import CustomSearchFilter,FooFilter
 from datetime import datetime
+from geopy import distance
 import math
+from operator import itemgetter
 
+def getSuggestions(lat,lon,response):
+    '''suggesstions'''
+    unsortedStList=[]
+    list = Stations.objects.all()
+    for station in list:
+        '''iterate over every station'''
+        stWithDist={}
+        ln=station.Longitude
+        if ln>90:
+            ln=90
+        lt=station.Latitude
+        print(station.StationName+':'+str(ln)+','+str(lt))
+        dist = distance.distance((lt,ln),(lat,lon)).km
+        stWithDist["StationCode"] = station.StationCode
+        stWithDist["StationName"] = station.StationName
+        stWithDist['distance'] =  float(dist)
+        unsortedStList.append(stWithDist)
     
+    sortedList = sorted(unsortedStList, key=itemgetter('distance'))
+    return sortedList[:response]
+
+
+
 class StationsNewView(generics.ListAPIView):
     '''About Stations'''
     queryset = StationsNew.objects.all()
@@ -70,7 +94,6 @@ class TrainInfoView(generics.ListAPIView):
         return queryset
 class StationInfoView(generics.ListAPIView):
     """Stations Info"""
-
     queryset = Stations.objects.all()
     serializer_class = StationsSerializer
     filter_backends = [filters.SearchFilter]
@@ -278,6 +301,18 @@ class WimtLiveStation(APIView):
             return Response({'Error':'Please provide ?station= parameter'},status=status.HTTP_400_BAD_REQUEST)
         
         d=WIMT.getLiveStationStatus(stn)
+        return Response(d,status=status.HTTP_200_OK)
+class StationsNearToLoc(APIView):
+    '''Asks Lat and lon and number of response'''
+    def get(self,request):
+        response=4
+        lat=request.GET.get('lat')
+        lon=request.GET.get('lon')
+        response=request.GET.get('response')
+        if lat is None and lon is None:
+            return Response({'Error':'Please provide ?lat=latitude&lon=longitude'},status=status.HTTP_400_BAD_REQUEST)
+        
+        d=getSuggestions(float(lat),float(lon),int(response))
         return Response(d,status=status.HTTP_200_OK)
 
 class TrainLiveLocation(APIView):

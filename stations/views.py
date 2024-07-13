@@ -363,7 +363,7 @@ class WimtTrainLiveStatus(APIView):
         train=TrainFullInfo.objects.get(pk=trn)
         src=train.srcStation['StationCode']
         dst=train.destStation['StationCode']
-        resp=MyCrypto.getWIMTTrainLiveLocation(trn,date,src,dst)
+        resp=WIMT.getWIMTTrainLiveLocation(trn,date,src,dst)
         return Response(resp,status=status.HTTP_200_OK)
 
 class TrainType(APIView):
